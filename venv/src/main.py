@@ -1,5 +1,6 @@
 import random, sys, copy, os, pygame
 from pygame.locals import *
+from pathlib import Path
 
 FPS = 30
 WINWIDTH = 800
@@ -15,8 +16,8 @@ CAN_MOVE_SPEED = 5
 
 OUTSIDE_DECORATION_PCT = 20
 
-BRIGHTBLUE = (0,   170, 255)
-WHITE      = (255, 255, 255)
+BRIGHTBLUE = (0, 170, 255)
+WHITE = (255, 255, 255)
 BGCOLOR = BRIGHTBLUE
 TEXTCOLOR = WHITE
 
@@ -24,7 +25,9 @@ UP = 'up'
 DOWN = 'down'
 LEFT = 'left'
 RIGHT = 'right'
-BASE_PATH = 'E:/Documents/Course_3/ChillWithPrograming/pythonProjects/firstProject/venv/img/'
+
+ROOT = str(Path(__file__).parent.parent)
+BASE_PATH = ROOT + "\\img\\"
 
 def main():
     global FPSCLOCK, DISPLAYSURF, IMAGESDICT, TILEMAPPING, OUTSIDEDECOMAPPING, BASICFONT, PLAYERIMAGES, currentImage
@@ -73,8 +76,8 @@ def main():
 
     startScreen()
 
-    levels = readLevelsFile('E:/Documents/Course_3/ChillWithPrograming/pythonProjects/firstProject/venv/starPusherLevels.txt')
-    currentLevelIndex = 0
+    levels = readLevelsFile(ROOT + '\\starPusherLevels.txt')
+    currentLevelIndex = 1
 
     while True:
         result = runLevel(levels, currentLevelIndex)
@@ -90,14 +93,14 @@ def main():
         elif result == 'reset':
             pass
 
-                
+
 def runLevel(levels, levelNum):
     global currentImage
     levelObj = levels[levelNum]
     mapObj = decorateMap(levelObj['mapObj'], levelObj['startState']['player'])
     gameStateObj = copy.deepcopy(levelObj['startState'])
     mapNeedsRedraw = True
-    levelSurf = BASICFONT.render('Level %s of %s' %(levelObj['levelNum'] + 1, len(levels)), 1, TEXTCOLOR)
+    levelSurf = BASICFONT.render('Level %s of %s' % (levelObj['levelNum'] + 1, len(levels)), 1, TEXTCOLOR)
     levelRect = levelSurf.get_rect()
     levelRect.bottomleft = (20, WINHEIGHT - 35)
     mapWidth = len(mapObj) * TILEWIDTH
@@ -132,7 +135,7 @@ def runLevel(levels, levelNum):
                 elif event.key == K_DOWN:
                     playerMoveTo = DOWN
 
-                #camera...
+                # camera...
 
         if playerMoveTo != None and not levelIsComplete:
             moved = makeMove(mapObj, gameStateObj, playerMoveTo)
@@ -156,12 +159,14 @@ def runLevel(levels, levelNum):
         pygame.display.update()
         FPSCLOCK.tick()
 
+
 def isWall(mapObj, x, y):
     if x < 0 or x >= len(mapObj) or y < 0 or y >= len(mapObj[x]):
         return False
     elif mapObj[x][y] in ('#', 'x'):
         return True
     return False
+
 
 def decorateMap(mapObj, startxy):
     """Makes a copy of the given map object and modifies it.
@@ -184,14 +189,15 @@ def decorateMap(mapObj, startxy):
     for x in range(len(mapObjCopy)):
         for y in range(len(mapObjCopy[0])):
             if mapObjCopy[x][y] == '#':
-                if  (isWall(mapObjCopy, x, y - 1) and isWall(mapObjCopy, x + 1, y)) or \
-                    (isWall(mapObjCopy, x + 1, y) and isWall(mapObjCopy, x, y + 1)) or \
-                    (isWall(mapObjCopy, x, y + 1) and isWall(mapObjCopy, x - 1, y)) or \
-                    (isWall(mapObjCopy, x - 1, y) and isWall(mapObjCopy, x, y - 1)):
-                        mapObjCopy[x][y] = 'x'
+                if (isWall(mapObjCopy, x, y - 1) and isWall(mapObjCopy, x + 1, y)) or \
+                        (isWall(mapObjCopy, x + 1, y) and isWall(mapObjCopy, x, y + 1)) or \
+                        (isWall(mapObjCopy, x, y + 1) and isWall(mapObjCopy, x - 1, y)) or \
+                        (isWall(mapObjCopy, x - 1, y) and isWall(mapObjCopy, x, y - 1)):
+                    mapObjCopy[x][y] = 'x'
             elif mapObjCopy[x][y] == ' ' and random.randint(0, 99) < OUTSIDE_DECORATION_PCT:
                 mapObjCopy[x][y] = random.choice(list(OUTSIDEDECOMAPPING.keys()))
     return mapObjCopy
+
 
 def isBlocked(mapObj, gameStateObj, x, y):
     if isWall(mapObj, x, y):
@@ -201,6 +207,7 @@ def isBlocked(mapObj, gameStateObj, x, y):
     elif (x, y) in gameStateObj['stars']:
         return False
     return False
+
 
 def makeMove(mapObj, gameStateObj, playerMoveTo):
     playerx, playery = gameStateObj['player']
@@ -230,6 +237,7 @@ def makeMove(mapObj, gameStateObj, playerMoveTo):
                 return False
         gameStateObj['player'] = (playerx + xOffset, playery + yOffset)
         return True
+
 
 def startScreen():
     titleRect = IMAGESDICT['title'].get_rect()
@@ -267,6 +275,7 @@ def startScreen():
                     return
         pygame.display.update()
         FPSCLOCK.tick()
+
 
 def readLevelsFile(filename):
     assert os.path.exists(filename), 'Cannot find the level file: %s' % (filename)
@@ -319,13 +328,15 @@ def readLevelsFile(filename):
                         # '$' is star
                         stars.append((x, y))
 
-            assert startx != None and starty != None, 'Level %s (around line %s) in %s is missing a'\
-            '"@" or "+" to mark the start point.' % (levelNum + 1, lineNum, filename)
+            assert startx is not None and starty is not None, 'Level %s (around line %s) in %s is missing a' \
+                                                          '"@" or "+" to mark the start point.' % (
+                                                              levelNum + 1, lineNum, filename)
             assert len(goals) > 0, 'Level %s (around line %s) in %s must have at least one goal.' % (
                 levelNum + 1, lineNum, filename
             )
-            assert len(stars) >= len(goals), 'Level %s (around line %s) in %s is impossible to solve.'\
-            'It has %s goals but only %s stars.' % (levelNum + 1, lineNum, filename, len(goals), len(stars))
+            assert len(stars) >= len(goals), 'Level %s (around line %s) in %s is impossible to solve.' \
+                                             'It has %s goals but only %s stars.' % (
+                                                 levelNum + 1, lineNum, filename, len(goals), len(stars))
 
             gameStateObj = {'player': (startx, starty),
                             'stepCounter': 0,
@@ -345,6 +356,7 @@ def readLevelsFile(filename):
             levelNum += 1
     return levels
 
+
 def floodFill(mapObj, x, y, oldCharacter, newCharacter):
     if mapObj[x][y] == oldCharacter:
         mapObj[x][y] = newCharacter
@@ -357,6 +369,7 @@ def floodFill(mapObj, x, y, oldCharacter, newCharacter):
         floodFill(mapObj, x, y + 1, oldCharacter, newCharacter)
     if y > 0 and mapObj[x][y - 1] == oldCharacter:
         floodFill(mapObj, x, y - 1, oldCharacter, newCharacter)
+
 
 def drawMap(mapObj, gameStateObj, goals):
     mapSurfWidth = len(mapObj) * TILEWIDTH
@@ -387,15 +400,18 @@ def drawMap(mapObj, gameStateObj, goals):
                 mapSurf.blit(PLAYERIMAGES[currentImage], spaceRect)
     return mapSurf
 
+
 def isLevelFinished(levelObj, gameStateObj):
     for goal in levelObj['goals']:
         if goal not in gameStateObj['stars']:
             return False
     return True
 
+
 def terminate():
     pygame.quit()
     sys.exit()
+
 
 if __name__ == "__main__":
     main()
